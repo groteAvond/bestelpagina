@@ -5,7 +5,6 @@
  * version: 1.2.1
  */
 
-
 defined('ABSPATH') || exit;
 
 add_action('rest_api_init', function () {
@@ -104,7 +103,8 @@ add_action('rest_api_init', function () {
       $email      = sanitize_email($normalized['email'] ?? '');
       $dag1       = sanitize_text_field($normalized['dagkeuze1'] ?? '');
       $dag2       = sanitize_text_field($normalized['dagkeuze2'] ?? '');
-      $vraagAantal = (int) ($normalized['vraagAantal'] ?? '');
+      $vraagAantalRaw = $normalized['vraagAantal'] ?? '';
+      $vraagAantal = is_string($vraagAantalRaw) ? trim($vraagAantalRaw) : $vraagAantalRaw;
       $leerlingnummers = is_array($normalized['leerlingnummers'] ?? null) ? $normalized['leerlingnummers'] : [];
 
       // leerlingnummers als array
@@ -114,23 +114,23 @@ add_action('rest_api_init', function () {
       )));
       
       // validatie
-      $days = ['donderdagAvond','vrijdagMiddag', 'vrijdagAvond'];
+      $days = ['moment1','moment2', 'moment3'];
       $errors = [];
 
       if ($voornaam   === '') $errors[] = 'Vul een voornaam in.';
-      if ($voornaam !== '' && !preg_match("/^[\p{L}]+(?:[ '-][\p{L}]+)*$/u", $voornaam)) $errors[] = 'Een voornaam bestaat alleen uit letters, met eventueel spaties, apostrof of koppelteken.';
-      if (strlen($voornaam) > 50) $errors[] = 'Een voornaam bestaat uit maximaal 50 tekens.';
+        elseif ($voornaam !== '' && !preg_match("/^[\p{L}]+(?:[ '-][\p{L}]+)*$/u", $voornaam)) $errors[] = 'Een voornaam bestaat alleen uit letters, met eventueel spaties, apostrof of koppelteken.';
+        elseif (strlen($voornaam) > 50) $errors[] = 'Een voornaam bestaat uit maximaal 50 tekens.';
 
       if ($achternaam === '') $errors[] = 'Vul een achternaam in.';
-      if ($achternaam !== '' && !preg_match("/^[\p{L}]+(?:[ '-][\p{L}]+)*$/u", $achternaam)) $errors[] = 'Een achternaam bestaat alleen uit letters, met eventueel spaties, apostrof of koppelteken.';
-      if (strlen($achternaam) > 80) $errors[] = 'Een achternaam bestaat uit maximaal 80 tekens.';
+        elseif ($achternaam !== '' && !preg_match("/^[\p{L}]+(?:[ '-][\p{L}]+)*$/u", $achternaam)) $errors[] = 'Een achternaam bestaat alleen uit letters, met eventueel spaties, apostrof of koppelteken.';
+        elseif (strlen($achternaam) > 80) $errors[] = 'Een achternaam bestaat uit maximaal 80 tekens.';
 
       if ($email === '' || !is_email($email)) $errors[] = 'Vul een geldig e-mailadres in.';
-      if (strlen($email) > 254) $errors[] = 'Een e-mailadres bestaat uit maximaal 254 tekens.';
+        elseif (strlen($email) > 254) $errors[] = 'Een e-mailadres bestaat uit maximaal 254 tekens.';
 
-      if ($dag1 === '' || !in_array($dag1, $days, true)) $errors[] = 'Een eerste voorkeursdag kiezen is verplicht, kies uit donderdag-avond, vrijdag-middag of vrijdag-avond.';
-      if ($dag2 === '' || !in_array($dag2, $days, true)) $errors[] = 'Een tweede voorkeursdag kiezen is verplicht, kies uit donderdag-avond, vrijdag-middag of vrijdag-avond.';
-      if ($dag1 !== '' && $dag2 !== '' && $dag1 === $dag2) $errors[] = 'De eerste en tweede voorkeursdag mogen niet gelijk zijn.';
+      if ($dag1 === '' || !in_array($dag1, $days, true)) $errors[] = 'Kies een eerste voorkeursdag, kies uit donderdag-avond, vrijdag-middag of vrijdag-avond.';
+      if ($dag2 === '' || !in_array($dag2, $days, true)) $errors[] = 'Kies een tweede voorkeursdag, kies uit donderdag-avond, vrijdag-middag of vrijdag-avond.';
+        elseif ($dag1 !== '' && $dag2 !== '' && $dag1 === $dag2) $errors[] = 'De eerste en tweede voorkeursdag mogen niet gelijk zijn.';
 
       $unique = array_values(array_unique($leerlingnummers));
       if (count($unique) !== count($leerlingnummers)) $errors[] = 'Elk leerlingnummer mag slechts één keer worden opgegeven.';
@@ -138,21 +138,20 @@ add_action('rest_api_init', function () {
       foreach ($leerlingnummers as &$ln) {
         $ln = trim($ln);
         if ($ln === '') continue;
-        if (!ctype_digit($ln)) $errors[] = 'Een leerlingnummer moet een cijfer zijn.';
+        if (!ctype_digit($ln)) $errors[] = 'Een leerlingnummer is een cijfer.';
         if (!preg_match('/^11[0-9]{4}$/', $ln)) $errors[] = "Alle leerlingnummers moeten beginnen met '11' gevolgd door 4 cijfers.";
         if (strlen($ln) !== 6) $errors[] = 'Een leerlingnummer bestaat altijd uit 6 cijfers.';
         if (preg_match('/^0+$/', $ln)) { $ln = "0"; }
-        if (strlen($ln) <= 0) $errors[] = 'Een leerlingnummer moet een positief getal zijn.';
+        if (strlen($ln) <= 0) $errors[] = 'Een leerlingnummer is een positief getal zijn.';
       }
       unset($ln);
 
-      if (!preg_match('/^[0-9]+$/', $vraagAantal)) $errors[] = 'Het totaal aantal kaarten moet een getal zijn.';
-      if ($vraagAantal < 0) $errors[] = 'Het totaal aantal kaarten moet positief zijn.';
-      if ($vraagAantal > 30) $errors[] = 'U kunt maximaal 30 kaarten bestellen.';
+      if ($vraagAantalRaw === '' || $vraagAantalRaw === null) $errors[] = 'Vul een totaal aantal kaarten in.';
+        elseif ($vraagAantal <= 0) $errors[] = 'Het totaal aantal kaarten is minimaal 1.';
+        elseif ($vraagAantal > 30) $errors[] = 'U kunt maximaal 30 kaarten bestellen.';
+        elseif (!ctype_digit((string)$vraagAantalRaw)) $errors[] = 'Het totaal aantal kaarten is een geheel getal.';
 
-      if (!empty($errors)) {
-        return new wp_rest_response(['errors' => $errors], 400);
-      }
+      if (!empty($errors)) return new wp_rest_response(['errors' => $errors], 400);
 
       // payload naar supabase
       $supabasePayload = [
@@ -163,6 +162,7 @@ add_action('rest_api_init', function () {
         'dagkeuze2'       => $dag2,
         'email'           => $email,
         'leerlingnummers' => $leerlingnummers,
+        '_phpErrors'      => $phpValidationErrors,
       ];
 
       // doorposten naar supabase edge function
@@ -219,11 +219,11 @@ add_shortcode('bestelformGA', function () {
       <select id="dagkeuze1" required>
         <option value="" disabled selected>-- Kies een dag --</option>
         <optgroup label="Donderdag 9 april">
-          <option value="donderdagAvond">Avond</option>
+          <option value="moment1">Avond</option>
         </optgroup>
         <optgroup label="Vrijdag 10 april">
-          <option value="vrijdagMiddag">Middag</option>
-          <option value="vrijdagAvond">Avond</option>
+          <option value="moment2">Middag</option>
+          <option value="moment3">Avond</option>
         </optgroup>
       </select>
     <label for="dagkeuze2">Kies de tweede voorkeursdag<span class="required">*</span></label>
