@@ -1,0 +1,116 @@
+body {
+  background-color: #E5E5E5; 
+  font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+}
+
+#hpVeld {
+  display: none;
+}
+
+#website {
+  position: absolute;
+  left: -9999px;
+  opacity: 0;
+  height: 0;
+}
+
+.required {
+  color: red;
+}
+
+label {
+  color: black;
+}
+
+input, select, #rolstoelMelding, .cf-turnstile, #bestelling {
+  margin-bottom: 10px;
+}
+
+/* Toastmelding */
+#meldingContainer {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 350px;
+  z-index: 999999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.melding {
+  padding: .8rem 1.2rem;
+  border-radius: .5rem;
+  color: #fff;
+  font-weight: 500;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  opacity: .95;
+  transition: opacity .5s ease;
+}
+
+.melding-succes {
+  background: #2ecc71;
+}
+
+.melding-fout {
+  background: #e74c3c;
+}
+
+.melding-info {
+  background: #34495e;
+}
+
+/* Loader */
+@import url('https://fonts.googleapis.com/css?family=Anton');
+
+.loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.loader_text {
+  margin: 5px auto;
+  color: #fff;
+  font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+}
+
+.loader_filmstrip {
+  position: relative;
+  width: 40px;
+  height: 50px;
+  background: #3D314A;
+  overflow: hidden;
+}
+
+.loader_filmstrip::before, .loader_filmstrip::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  width: 5px;
+  height: 100%;
+  background: repeating-linear-gradient(
+    to bottom,
+    #F5F1ED 0 6px,
+    transparent 6px 12px
+  );
+  animation: roll 600ms linear infinite;
+}
+
+.loader_filmstrip::before {
+  left: 5px;
+}
+
+.loader_filmstrip::after {
+  right: 5px;
+}
+
+@keyframes roll {
+  from {
+    background-position-y: 0;
+  }
+  to {
+    background-position-y: 12px;
+  }
+}
