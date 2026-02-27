@@ -74,46 +74,48 @@ async function safeJson(req) {
 function validateWPInput(input) {
   const errors = [];
   const allowedDays = [
-    "donderdagAvond",
-    "vrijdagMiddag",
-    "vrijdagAvond",
+    "moment1",
+    "moment2",
+    "moment3",
   ];
   const voornaam = String(input.voornaam ?? "").trim();
   const achternaam = String(input.achternaam ?? "").trim();
   const voorkeurDag1 = String(input.dagkeuze1 ?? "").trim();
   const voorkeurDag2 = String(input.dagkeuze2 ?? "").trim();
   const email = String(input.email ?? "").trim();
-  const aantalKaarten = Number(input.aantalKaarten ?? "");
+  const aantalRaw = input.aantalKaarten;
+  let aantalKaarten: number | null = null;
   const nameRegex = /^[\p{L}]+(?:[ '\-][\p{L}]+)*$/u;
-  // leerlingnummers veilig normaliseren naar array
+  // leerlingnummers normaliseren naar array
   let leerlingnummers = [];
   if (Array.isArray(input.leerlingnummers)) {
     leerlingnummers = input.leerlingnummers.map((v)=>String(v ?? "").trim()).filter((v)=>v !== "");
   }
   if (voornaam === "") errors.push("Vul een voornaam in.");
-  if (voornaam !== "" && !nameRegex.test(voornaam)) errors.push("Een voornaam bestaat alleen uit letters, met eventueel spaties, apostrof of koppelteken.");
-  if (voornaam.length > 50) errors.push("Een voornaam bestaat uit maximaal 50 tekens.");
+    else if (voornaam !== "" && !nameRegex.test(voornaam)) errors.push("Een voornaam bestaat alleen uit letters, met eventueel spaties, apostrof of koppelteken.");
+    else if (voornaam.length > 50) errors.push("Een voornaam bestaat uit maximaal 50 tekens.");
   if (achternaam === "") errors.push("Vul een achternaam in.");
-  if (achternaam !== "" && !nameRegex.test(achternaam)) errors.push("Een achternaam bestaat alleen uit letters, met eventueel spaties, apostrof of koppelteken.");
-  if (achternaam.length > 80) errors.push("Een achternaam bestaat uit maximaal 80 tekens.");
+    else if (achternaam !== "" && !nameRegex.test(achternaam)) errors.push("Een achternaam bestaat alleen uit letters, met eventueel spaties, apostrof of koppelteken.");
+    else if (achternaam.length > 80) errors.push("Een achternaam bestaat uit maximaal 80 tekens.");
   if (email === "" || !/^\S+@\S+\.\S+$/.test(email)) errors.push("Vul een geldig e-mailadres in.");
-  if (email.length > 254) errors.push("Een e-mailadres bestaat uit maximaal 254 tekens.");
-  if (voorkeurDag1 === "" || !allowedDays.includes(voorkeurDag1)) errors.push("Een eerste voorkeursdag kiezen is verplicht, kies uit donderdag-avond, vrijdag-middag of vrijdag-avond.");
-  if (voorkeurDag2 === "" || !allowedDays.includes(voorkeurDag2)) errors.push("Een tweede voorkeursdag kiezen is verplicht, kies uit donderdag-avond, vrijdag-middag of vrijdag-avond.");
-  if (voorkeurDag1 && voorkeurDag2 && voorkeurDag1 === voorkeurDag2) errors.push("De eerste en tweede voorkeursdag mogen niet gelijk zijn.");
+    else if (email.length > 254) errors.push("Een e-mailadres bestaat uit maximaal 254 tekens.");
+  if (voorkeurDag1 === "" || !allowedDays.includes(voorkeurDag1)) errors.push("Kies een eerste voorkeursdag, kies uit donderdag-avond, vrijdag-middag of vrijdag-avond.");
+  if (voorkeurDag2 === "" || !allowedDays.includes(voorkeurDag2)) errors.push("Kies een tweede voorkeursdag, kies uit donderdag-avond, vrijdag-middag of vrijdag-avond.");
+    else if (voorkeurDag1 && voorkeurDag2 && voorkeurDag1 === voorkeurDag2) errors.push("De eerste en tweede voorkeursdag kunnen niet gelijk zijn.");
   const uniqueSet = new Set(leerlingnummers);
   if (uniqueSet.size !== leerlingnummers.length) errors.push("Elk leerlingnummer mag slechts één keer worden opgegeven.");
   if (leerlingnummers.length > 30) errors.push("U kunt maximaal 30 leerlingnummers opgeven.");
   for (const ln of leerlingnummers){
-    if (!/^\d+$/.test(ln)) errors.push("Een leerlingnummer moet een cijfer zijn.");
+    if (!/^\d+$/.test(ln)) errors.push("Een leerlingnummer is een cijfer.");
     if (!/^11[0-9]{4}$/.test(ln)) errors.push("Alle leerlingnummers moeten beginnen met '11' gevolgd door 4 cijfers.");
     if (ln.length !== 6) errors.push("Een leerlingnummer bestaat altijd uit 6 cijfers.");
-    if (/^0+$/.test(ln)) errors.push("Een leerlingnummer moet een positief getal zijn.");
+    if (/^0+$/.test(ln)) errors.push("Een leerlingnummer is een positief getal zijn.");
   }
-  if (isNaN(aantalKaarten)) errors.push("Het totaal aantal kaarten moet een cijfer zijn.");
-  if (aantalKaarten < 0) errors.push("Het totaal aantal kaarten moet positief zijn.");
-  if (aantalKaarten > 30) errors.push("U kunt maximaal 30 kaarten bestellen.");
-  if (!Number.isInteger(aantalKaarten)) errors.push("Het totaal aantal kaarten moet een geheel getal zijn.");
+  if (aantalRaw === "" || aantalRaw === null || aantalRaw === undefined) errors.push("Vul een totaal aantal kaarten in.");
+    else if (aantalKaarten <= 0) errors.push("Het totaal aantal kaarten is minimaal 1.");
+    else if (aantalKaarten > 30) errors.push("U kunt maximaal 30 kaarten bestellen.");
+    else if (!/^\d+$/.test(String(aantalRaw).trim())) errors.push("Het totaal aantal kaarten is een geheel getal.");
+
   return {
     valid: errors.length === 0,
     errors,
@@ -175,9 +177,9 @@ function isPwsMensControle(achternaam: string) {
 }
 // Dagen naar hoofdletter omzetten in database
 const dagTitles: Record<string, string> = {
-  donderdagAvond: 'Donderdag 9 april - avond',
-  vrijdagMiddag: 'Vrijdag 10 april - middag',
-  vrijdagAvond: 'Vrijdag 10 april - avond',
+  moment1: 'Donderdag 9 april - avond',
+  moment2: 'Vrijdag 10 april - middag',
+  moment3: 'Vrijdag 10 april - avond',
 };
 // Controle welke en hoeveel leerlingen lid zijn van Io Vivat
 const ioVivatEmailRegex = /^l(11\d{4})@gsr\.nl$/i;
