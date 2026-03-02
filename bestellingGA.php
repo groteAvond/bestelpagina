@@ -2,7 +2,7 @@
 /**
  * plugin name: GA bestellingen (wp → supabase)
  * description: wp rest-proxy + shortcode voor bestelformulier (supabase edge function).
- * version: 1.2.1
+ * version: 1.3.1
  */
 
 defined('ABSPATH') || exit;
@@ -98,11 +98,11 @@ add_action('rest_api_init', function () {
       }
 
       // invoer ophalen en sanitiseren
-      $voornaam   = sanitize_text_field($normalized['voornaam'] ?? '');
+      $voornaam = sanitize_text_field($normalized['voornaam'] ?? '');
       $achternaam = sanitize_text_field($normalized['achternaam'] ?? '');
-      $email      = sanitize_email($normalized['email'] ?? '');
-      $dag1       = sanitize_text_field($normalized['dagkeuze1'] ?? '');
-      $dag2       = sanitize_text_field($normalized['dagkeuze2'] ?? '');
+      $email = sanitize_email($normalized['email'] ?? '');
+      $dag1 = sanitize_text_field($normalized['dagkeuze1'] ?? '');
+      $dag2 = sanitize_text_field($normalized['dagkeuze2'] ?? '');
       $vraagAantalRaw = $normalized['vraagAantal'] ?? '';
       $vraagAantal = is_string($vraagAantalRaw) ? trim($vraagAantalRaw) : $vraagAantalRaw;
       $leerlingnummers = is_array($normalized['leerlingnummers'] ?? null) ? $normalized['leerlingnummers'] : [];
@@ -157,12 +157,11 @@ add_action('rest_api_init', function () {
       $supabasePayload = [
         'voornaam'        => $voornaam,
         'achternaam'      => $achternaam,
-        'aantalKaarten'   => $vraagAantal,
+        'vraagAantal'     => $vraagAantal,
         'dagkeuze1'       => $dag1,
         'dagkeuze2'       => $dag2,
         'email'           => $email,
         'leerlingnummers' => $leerlingnummers,
-        '_phpErrors'      => $phpValidationErrors,
       ];
 
       // doorposten naar supabase edge function
@@ -234,7 +233,7 @@ add_shortcode('bestelformGA', function () {
         <input type="number" id="vraagAantal" placeholder="Totaal aantal kaarten" required min="1" max="30" step="1">
     <label for="leerlingnummers">Alle leerlingnummers van leerlingen binnen deze bestelling (voor controle lidmaatschap Io Vivat)</label>
       <div id="leerlingnummersContainer"></div>
-    <div id="rolstoelMelding">Om rolstoelplekken te reserveren, kunt u een mail sturen naar <a href="mailto:groteavond@gsr.nl">groteavond@gsr.nl</a>.</div>
+    <div id="rolstoelMelding">Om rolstoelplekken te reserveren, kunt u een mail sturen naar <a href="mailto:groteavond@gsr.nl" id="mailGA">groteavond@gsr.nl</a>.</div>
     <input type="hidden" id="cf_token" name="cf_token">
     <div class="cf-turnstile"></div>
     <input type="submit" id="formSubmitButton" value="Bestellen!">
@@ -256,8 +255,8 @@ add_action('wp_enqueue_scripts', function () {
         'bestellingGA-js',
         plugin_dir_url(__FILE__) . 'bestellingGA.js',
         [],
-        '1.2.1',
-        true
+        '1.3.1',
+        true,
       );
       wp_localize_script('bestellingGA-js', 'gabest', [
         'resturl' => esc_url_raw( rest_url('ga/v1/bestelling') ),
@@ -267,7 +266,7 @@ add_action('wp_enqueue_scripts', function () {
         'bestellingGA-css',
         plugin_dir_url(__FILE__) . 'bestellingGA.css',
         [],
-        '1.1.1'
+        '1.3.1',
       );
     }
   }
