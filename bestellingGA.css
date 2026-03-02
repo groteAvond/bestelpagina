@@ -1,29 +1,48 @@
-body {
-  background-color: #E5E5E5; 
-  font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+.shortcode #bestelform {
+  width: 100%;
+  font-family: 'Open Sans';
 }
 
-#hpVeld {
-  display: none;
-}
-
-#website {
-  position: absolute;
-  left: -9999px;
-  opacity: 0;
-  height: 0;
-}
-
-.required {
+.shortcode #bestelform .required {
   color: red;
 }
 
-label {
+.shortcode #bestelform a:link {
+  color: rgb(145, 100, 255);
+  font-size: 16px;
+}
+
+.shortcode #bestelform label {
+  display: block;
+  width: 100%;
+  text-align: left;
   color: black;
 }
 
-input, select, #rolstoelMelding, .cf-turnstile, #bestelling {
+.shortcode #bestelform input[type="submit"] {
+  width: 20%;
+  color: white;
+  background-color: rgb(145, 100, 255);
+  border: none;
+}
+
+.shortcode #bestelform input,
+.shortcode #bestelform select,
+.shortcode #bestelform #leerlingnummersContainer,
+.shortcode #bestelform #rolstoelMelding,
+.shortcode #bestelform .cf-turnstile {
+  display: block;
+  width: 100%;
   margin-bottom: 10px;
+}
+
+.shortcode #bestelform input,
+.shortcode #bestelform select,
+.shortcode #bestelform #leerlingnummer {
+  border-radius: 5px;
+  border: 1px solid rgb(141, 141, 141);
+  height: 42px;
+  padding: 9px;
 }
 
 /* Toastmelding */
