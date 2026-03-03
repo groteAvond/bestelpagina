@@ -1,4 +1,4 @@
-// Versie 1.2.1
+// Versie 1.3.1
 import { serve } from "https://deno.land/std/http/server.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 // ====== ENV ======
@@ -83,8 +83,8 @@ function validateWPInput(input) {
   const voorkeurDag1 = String(input.dagkeuze1 ?? "").trim();
   const voorkeurDag2 = String(input.dagkeuze2 ?? "").trim();
   const email = String(input.email ?? "").trim();
-  const aantalRaw = input.aantalKaarten;
-  let aantalKaarten: number | null = null;
+  const vraagAantalRaw = input.vraagAantal;
+  let vraagAantal: number | null = null;
   const nameRegex = /^[\p{L}]+(?:[ '\-][\p{L}]+)*$/u;
   // leerlingnummers normaliseren naar array
   let leerlingnummers = [];
@@ -111,10 +111,14 @@ function validateWPInput(input) {
     if (ln.length !== 6) errors.push("Een leerlingnummer bestaat altijd uit 6 cijfers.");
     if (/^0+$/.test(ln)) errors.push("Een leerlingnummer is een positief getal zijn.");
   }
-  if (aantalRaw === "" || aantalRaw === null || aantalRaw === undefined) errors.push("Vul een totaal aantal kaarten in.");
-    else if (aantalKaarten <= 0) errors.push("Het totaal aantal kaarten is minimaal 1.");
-    else if (aantalKaarten > 30) errors.push("U kunt maximaal 30 kaarten bestellen.");
-    else if (!/^\d+$/.test(String(aantalRaw).trim())) errors.push("Het totaal aantal kaarten is een geheel getal.");
+
+  if (vraagAantalRaw === "" || vraagAantalRaw === null || vraagAantalRaw === undefined) errors.push("Vul een totaal aantal kaarten in.");
+    else {
+      vraagAantal = Number(vraagAantalRaw);
+      if (!Number.isInteger(vraagAantal)) errors.push("Het totaal aantal kaarten is een geheel getal.");
+      else if (vraagAantal <= 0) errors.push("Het totaal aantal kaarten is minimaal 1.");
+      else if (vraagAantal > 30) errors.push("U kunt maximaal 30 kaarten bestellen.");
+    }
 
   return {
     valid: errors.length === 0,
@@ -126,7 +130,7 @@ function validateWPInput(input) {
       voorkeurDag2,
       email,
       leerlingnummers,
-      aantalKaarten,
+      vraagAantal,
     }
   };
 }
@@ -205,13 +209,13 @@ function collectIoVivatCandidates(email: string, leerlingnummers: string[]) {
   return Array.from(set);
 }
 // Totaal prijs voor klant berekenen
-function prijsBerekening(aantalKaarten: number, ioVivat: number): number {
-  const betaaldeKaarten = Math.max(0, aantalKaarten - ioVivat);
+function prijsBerekening(vraagAantal: number, ioVivat: number): number {
+  const betaaldeKaarten = Math.max(0, vraagAantal - ioVivat);
   return betaaldeKaarten * 15;
 }
 // Helper om te detecteren of body een WP-payload lijkt
 function looksLikeWP(body) {
-  return body && typeof body === "object" && ("voornaam" in body || "achternaam" in body || "email" in body || "dagkeuze1" in body || "dagkeuze2" in body || "aantalKaarten" in body);
+  return body && typeof body === "object" && ("voornaam" in body || "achternaam" in body || "email" in body || "dagkeuze1" in body || "dagkeuze2" in body || "vraagAantal" in body);
 }
 // ====== Server ======
 serve(async (req)=>{
@@ -274,7 +278,7 @@ serve(async (req)=>{
       }
     }
     // tweede validatie om waarden naar database op te schonen
-    const totaalPrijs = isErelid ? 0 : prijsBerekening(d.aantalKaarten, ioVivatCount);
+    const totaalPrijs = isErelid ? 0 : prijsBerekening(d.vraagAantal, ioVivatCount);
     // database insert
     const { data, error } = await supabase.from("bestellingenGA").insert({
       voornaam: d.voornaam,
@@ -282,7 +286,7 @@ serve(async (req)=>{
       isErelid,
       speeltMee,
       isDocent,
-      aantalKaarten: d.aantalKaarten,
+      aantalKaarten: d.vraagAantal,
       voorkeurDag1: d.voorkeurDag1,
       voorkeurDag2: d.voorkeurDag2,
       email: d.email,
@@ -327,7 +331,7 @@ serve(async (req)=>{
             "aKE7Ml"
           ],
           fields: {
-            aantalkaarten: d.aantalKaarten,
+            aantalkaarten: d.vraagAantal,
             voorkeurdag1: dag1_sd,
             voorkeurdag2: dag2_sd,
             leerlingnummers: leerlingen ?? "Geen",
