@@ -130,6 +130,7 @@
       el.type = "text";
       el.inputMode = "numeric";
       el.pattern = "[0-9]*";
+      el.id = "leerlingnummer"
       const rnd = maakRandomVeldnaam();
       // let mapping meerdere waarden per orig opslaan:
       (mapping["leerlingnummers[]"] ||= []).push(rnd);
@@ -269,12 +270,6 @@
     initDagkeuzeListener();
 
     form.addEventListener("submit", async (e) => {
-      const veldMap = randomiseerVeldNamen(form);
-      Object.assign(veldMap, mapping);
-
-      // body maken
-      const fd = new FormData(form);
-
       e.preventDefault();
       clearMeldingen();
 
@@ -287,6 +282,12 @@
         if (submitBtn) submitBtn.disabled = false;
         return;
       }
+
+      const veldMap = randomiseerVeldNamen(form);
+      Object.assign(veldMap, mapping);
+
+      // body maken
+      const fd = new FormData(form);
 
       // check of Turnstile token aanwezig is
       const cfHidden = document.getElementById("cf_token");
@@ -360,6 +361,23 @@
           } else if (json && json.error) {
             toonMelding(json.error, "fout");
           } else {
+
+  const debugInfo = {
+    status: res.status,
+    statusText: res.statusText,
+    response: json,
+    rawBody: typeof text !== "undefined" ? text : null
+  };
+
+  toonMelding(
+    "Onbekende fout:\n" + JSON.stringify(debugInfo, null, 2),
+    "fout",
+    true
+  );
+
+  console.error(debugInfo);
+
+
             toonMelding("Onbekende fout.", "fout");
           }
         }
