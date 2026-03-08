@@ -1,4 +1,4 @@
-// Versie 1.3.1
+// Versie 1.3.4
 import { serve } from "https://deno.land/std/http/server.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 // ====== ENV ======
@@ -111,7 +111,6 @@ function validateWPInput(input) {
     if (ln.length !== 6) errors.push("Een leerlingnummer bestaat altijd uit 6 cijfers.");
     if (/^0+$/.test(ln)) errors.push("Een leerlingnummer is een positief getal zijn.");
   }
-
   if (vraagAantalRaw === "" || vraagAantalRaw === null || vraagAantalRaw === undefined) errors.push("Vul een totaal aantal kaarten in.");
     else {
       vraagAantal = Number(vraagAantalRaw);
@@ -119,7 +118,6 @@ function validateWPInput(input) {
       else if (vraagAantal <= 0) errors.push("Het totaal aantal kaarten is minimaal 1.");
       else if (vraagAantal > 30) errors.push("U kunt maximaal 30 kaarten bestellen.");
     }
-
   return {
     valid: errors.length === 0,
     errors,
@@ -137,9 +135,13 @@ function validateWPInput(input) {
 // Controle of hoofdboeker erelid is
 const ereleden = new Set(
   [
-    "bri@gsr.nl",
-    "gdendulk@ziggo.nl",
-    "h.de.lange@kpnmail.nl",
+    "H.de.lange@kpnmail.nl",
+    "C.A.vanderVloed@driestar-educatief.nl",
+    "WGR@gsr.nl",
+    "Inekevdbkoops@gmail.com",
+    "Seldenthuisb@gmail.com",
+    "Pkvandenberg@kpnmail.nl",
+    "Gdendulk@ziggo.nl",
   ].map((e) => e.toLowerCase().replace(/\s+/g, ""))
 );
 function isErelidControle(email: string) {
@@ -209,7 +211,8 @@ function collectIoVivatCandidates(email: string, leerlingnummers: string[]) {
   return Array.from(set);
 }
 // Totaal prijs voor klant berekenen
-function prijsBerekening(vraagAantal: number, ioVivat: number): number {
+function prijsBerekening(vraagAantal: number, ioVivat: number, isErelid: boolean): number {
+  if (isErelid) return 0;
   const betaaldeKaarten = Math.max(0, vraagAantal - ioVivat);
   return betaaldeKaarten * 15;
 }
@@ -245,7 +248,7 @@ serve(async (req)=>{
     // waarden naar database opschonen
     const d = validated.clean;
     const isErelid = isErelidControle(d.email);
-    const isDocent = isErelid ? null : isDocentControle(d.email);
+      const isDocent = isErelid ? false : isDocentControle(d.email);
     const dag1_sd = dagTitles[d.voorkeurDag1] ?? d.voorkeurDag1;
     const dag2_sd = dagTitles[d.voorkeurDag2] ?? d.voorkeurDag2;
     const leerlingen = d.leerlingnummers?.length > 0 ? d.leerlingnummers.join(", ") : null;
@@ -278,7 +281,7 @@ serve(async (req)=>{
       }
     }
     // tweede validatie om waarden naar database op te schonen
-    const totaalPrijs = isErelid ? 0 : prijsBerekening(d.vraagAantal, ioVivatCount);
+    const totaalPrijs = prijsBerekening(d.vraagAantal, ioVivatCount, isErelid);
     // database insert
     const { data, error } = await supabase.from("bestellingenGA").insert({
       voornaam: d.voornaam,
